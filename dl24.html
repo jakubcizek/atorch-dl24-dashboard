@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atorch DL24P</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-yellow: #eab308;
+            --accent-purple: #a855f7;
+            --accent-cyan: #06b6d4;
+            --border-radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--bg-card);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .logo-subtitle {
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            font-weight: 500;
+        }
+
+        .logo-subtitle a {
+            color: inherit;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            transition: opacity 0.2s;
+        }
+
+        .logo-subtitle a:hover {
+            opacity: 0.8;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent-red);
+            transition: background-color 0.3s;
+        }
+
+        .status-dot.connected {
+            background: var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connecting {
+            background: var(--accent-yellow);
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Connect Button */
+        .btn-connect {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-connect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
+        }
+
+        .btn-connect:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .bt-icon {
+            font-size: 1.2rem;
+        }
+
+        /* Values Grid */
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .value-card {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 1.25rem;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+
+        .value-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .value-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .value-label .icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .value-number {
+            font-size: 2rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            line-height: 1.2;
+        }
+
+        .value-unit {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-left: 0.25rem;
+        }
+
+        .value-card.voltage .icon { background: #ecf74e; color: #000; }
+        .value-card.voltage .value-number { color: #ecf74e; }
+
+        .value-card.current .icon { background: #5eb02f; }
+        .value-card.current .value-number { color: #5eb02f; }
+
+        .value-card.power .icon { background: #5fc7ec; color: #000; }
+        .value-card.power .value-number { color: #5fc7ec; }
+
+        .value-card.capacity .icon { background: #3b7eca; }
+        .value-card.capacity .value-number { color: #3b7eca; }
+
+        .value-card.energy .icon { background: #a7e5f0; color: #000; }
+        .value-card.energy .value-number { color: #a7e5f0; }
+
+        .value-card.temperature .icon { background: var(--accent-red); }
+        .value-card.temperature .value-number { color: var(--accent-red); }
+
+        .value-card.runtime .icon { background: var(--text-secondary); }
+        .value-card.runtime .value-number { color: var(--text-primary); font-size: 1.75rem; }
+
+        .chart-section {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .chart-legend {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .legend-item.hidden {
+            opacity: 0.4;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 0.875rem 1.75rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .btn-start {
+            background: var(--accent-green);
+            color: #000;
+        }
+
+        .btn-start:hover {
+            background: #16a34a;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+        }
+
+        .btn-stop {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .btn-stop:hover {
+            background: #dc2626;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-clear {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .btn-clear:hover {
+            background: #475569;
+        }
+
+        .btn-save {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #2563eb;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Log Section */
+        .log-section {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .log-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .log-clear {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .log-clear:hover {
+            color: var(--text-primary);
+        }
+
+        .log-content {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 0.75rem;
+            height: 120px;
+            overflow-y: auto;
+            font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .log-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .log-content::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+            border-radius: 4px;
+        }
+
+        .log-content::-webkit-scrollbar-thumb {
+            background: var(--bg-card);
+            border-radius: 4px;
+        }
+
+        .log-content::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        .log-entry {
+            margin-bottom: 0.25rem;
+        }
+
+        .log-entry.error {
+            color: var(--accent-red);
+        }
+
+        .log-entry.success {
+            color: var(--accent-green);
+        }
+
+        .log-entry.info {
+            color: var(--accent-blue);
+        }
+
+        /* Samples counter */
+        .samples-info {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .container {
+                padding: 0.75rem;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+
+            .logo {
+                justify-content: center;
+            }
+
+            .connection-status {
+                justify-content: center;
+            }
+
+            .value-number {
+                font-size: 1.75rem;
+            }
+
+            .btn {
+                flex: 1;
+                min-width: calc(50% - 0.5rem);
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        .api-warning {
+            background: var(--accent-red);
+            color: white;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            display: none;
+        }
+
+        .api-warning.visible {
+            display: block;
+        }
+
+        .api-warning a {
+            color: white;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="api-warning" id="apiWarning">
+            Your browser does not support Web Bluetooth API. You need <a href="https://caniuse.com/web-bluetooth" target="_blank">Chrome, Edge or Opera</a> on desktop, or Chrome on Android.
+        </div>
+
+        <header>
+            <div class="logo">
+                <div class="logo-icon">BT</div>
+                <div>
+                    <h1>Atorch DL24P</h1>
+                    <span class="logo-subtitle">Tested only on <a href="https://www.laskakit.cz/atorch-dl24p-laboratorni-elektronicka-zatez-200v--25a--180w/">this device</a> from LaskaKit</span>
+                </div>
+            </div>
+            <div class="connection-status">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Disconnected</span>
+            </div>
+            <button class="btn-connect" id="btnConnect">
+                <span class="bt-icon">&#x1F517;</span>
+                Connect DLP24P via Bluetooth
+            </button>
+        </header>
+
+        <div class="values-grid">
+            <div class="value-card voltage">
+                <div class="value-label">
+                    <span class="icon">V</span>
+                    Voltage
+                </div>
+                <div class="value-number">
+                    <span id="voltage">0.00</span>
+                    <span class="value-unit">V</span>
+                </div>
+            </div>
+
+            <div class="value-card current">
+                <div class="value-label">
+                    <span class="icon">A</span>
+                    Current
+                </div>
+                <div class="value-number">
+                    <span id="current">0.00</span>
+                    <span class="value-unit">A</span>
+                </div>
+            </div>
+
+            <div class="value-card power">
+                <div class="value-label">
+                    <span class="icon">W</span>
+                    Power
+                </div>
+                <div class="value-number">
+                    <span id="power">0.00</span>
+                    <span class="value-unit">W</span>
+                </div>
+            </div>
+
+            <div class="value-card capacity">
+                <div class="value-label">
+                    <span class="icon">C</span>
+                    Charge
+                </div>
+                <div class="value-number">
+                    <span id="capacity">0.00</span>
+                    <span class="value-unit">mAh</span>
+                </div>
+            </div>
+
+            <div class="value-card energy">
+                <div class="value-label">
+                    <span class="icon">E</span>
+                    Energy
+                </div>
+                <div class="value-number">
+                    <span id="energy">0.00</span>
+                    <span class="value-unit">Wh</span>
+                </div>
+            </div>
+
+            <div class="value-card temperature">
+                <div class="value-label">
+                    <span class="icon">°C</span>
+                    Temperature
+                </div>
+                <div class="value-number">
+                    <span id="temperature">0.00</span>
+                    <span class="value-unit">°C</span>
+                </div>
+            </div>
+
+            <div class="value-card runtime">
+                <div class="value-label">
+                    <span class="icon">⏱</span>
+                    Timer
+                </div>
+                <div class="value-number">
+                    <span id="runtime">00:00:00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <div class="chart-header">
+                <h2 class="chart-title">Refreshing at 1 Hz</h2>
+                <div class="chart-legend">
+                    <div class="legend-item" data-series="voltage">
+                        <span class="legend-color" style="background: #ecf74e;"></span>
+                        Voltage
+                    </div>
+                    <div class="legend-item" data-series="current">
+                        <span class="legend-color" style="background: #5eb02f;"></span>
+                        Current
+                    </div>
+                    <div class="legend-item" data-series="power">
+                        <span class="legend-color" style="background: #5fc7ec;"></span>
+                        Power
+                    </div>
+                    <div class="legend-item" data-series="capacity">
+                        <span class="legend-color" style="background: #3b7eca;"></span>
+                        Charge
+                    </div>
+                    <div class="legend-item" data-series="energy">
+                        <span class="legend-color" style="background: #a7e5f0;"></span>
+                        Energy
+                    </div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="chart"></canvas>
+            </div>
+            <div class="samples-info">
+                Records number: <span id="sampleCount">0</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-start" id="btnStart" disabled>
+                <span>▶</span> START
+            </button>
+            <button class="btn btn-stop" id="btnStop" disabled>
+                <span>■</span> STOP
+            </button>
+            <button class="btn btn-clear" id="btnClear">
+                <span>🗑</span> CLEAR
+            </button>
+            <button class="btn btn-save" id="btnSave">
+                <span>💾</span> SAVE
+            </button>
+        </div>
+
+        <div class="log-section">
+            <div class="log-header">
+                <span class="log-title">System log</span>
+                <button class="log-clear" id="btnLogClear">Clear</button>
+            </div>
+            <div class="log-content" id="logContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Protocol (only partial support for tested Atorch DL24P):
+        // https://github.com/syssi/esphome-atorch-dl24/blob/main/docs/protocol-design.md
+        // Bluetooth UUIDs
+        const SERVICE_UUID        = "0000ffe0-0000-1000-8000-00805f9b34fb";
+        const CHARACTERISTIC_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb";
+
+        // Message header: [0xFF 0x55] [msg_type] [device_type] [payload...] [checksum]
+        const MESSAGE_HEADER_1    = 0xFF; // Message must begin with 0xFF55
+        const MESSAGE_HEADER_2    = 0x55;
+        const MESSAGE_TYPE        = 0x01; // Message is report with measured values
+        const MESSAGE_DEVICE_TYPE = 0x02; // Device is DC meter
+
+        // Database
+        const data = {
+            device: null,
+            server: null,
+            notifyCharacteristic: null,
+            isConnected: false,
+            isReceiving: false,
+            frameBuffer: new Uint8Array(64),
+            frameBufferLen: 0,
+            runtimeStartTime: null,
+            runtimeElapsed: 0,
+            runtimeInterval: null,
+            points: {
+                timestamps: [],
+                voltage: [],
+                current: [],
+                power: [],
+                capacity: [],
+                energy: [],
+                temperature: []
+            },
+            accumulatedWh: 0,
+            maxChartDataPoints: 600
+        };
+
+        // DOM Elements
+        const elements = {
+            btnConnect: document.getElementById("btnConnect"),
+            btnStart: document.getElementById("btnStart"),
+            btnStop: document.getElementById("btnStop"),
+            btnClear: document.getElementById("btnClear"),
+            btnSave: document.getElementById("btnSave"),
+            btnLogClear: document.getElementById("btnLogClear"),
+            statusDot: document.getElementById("statusDot"),
+            statusText: document.getElementById("statusText"),
+            logContent: document.getElementById("logContent"),
+            sampleCount: document.getElementById("sampleCount"),
+            apiWarning: document.getElementById("apiWarning"),
+            values: {
+                voltage: document.getElementById("voltage"),
+                current: document.getElementById("current"),
+                power: document.getElementById("power"),
+                capacity: document.getElementById("capacity"),
+                energy: document.getElementById("energy"),
+                temperature: document.getElementById("temperature"),
+                runtime: document.getElementById("runtime")
+            }
+        };
+
+        // Check Web Bluetooth API support
+        if (!navigator.bluetooth) {
+            elements.apiWarning.classList.add("visible");
+            elements.btnConnect.disabled = true;
+        }
+
+        // Chart setup
+        const ctx = document.getElementById("chart").getContext("2d");
+        const chart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: "Voltage (V)",
+                        data: [],
+                        borderColor: "#ecf74e",
+                        backgroundColor: "rgba(236, 247, 78, 0.1)",
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 0,
+                        yAxisID: "y"
+                    },
+                    {
+                        label: "Current (A)",
+                        data: [],
+                        borderColor: "#5eb02f",
+                        backgroundColor: "rgba(94, 176, 47, 0.1)",
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 0,
+                        yAxisID: "y1"
+                    },
+                    {
+                        label: "Power (W)",
+                        data: [],
+                        borderColor: "#5fc7ec",
+                        backgroundColor: "rgba(95, 199, 236, 0.1)",
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 0,
+                        yAxisID: "y2"
+                    },
+                    {
+                        label: "Charge (mAh)",
+                        data: [],
+                        borderColor: "#3b7eca",
+                        backgroundColor: "rgba(59, 126, 202, 0.1)",
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 0,
+                        yAxisID: "y4"
+                    },
+                    {
+                        label: "Energy (Wh)",
+                        data: [],
+                        borderColor: "#a7e5f0",
+                        backgroundColor: "rgba(167, 229, 240, 0.1)",
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 0,
+                        yAxisID: "y3"
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: "index",
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: "rgba(30, 41, 59, 0.95)",
+                        titleColor: "#f8fafc",
+                        bodyColor: "#94a3b8",
+                        borderColor: "#334155",
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                const units = ["V", "A", "W", "mAh", "Wh"];
+                                const decimals = [2, 3, 2, 0, 2];
+                                return context.dataset.label.split(" ")[0] + ": " +
+                                       context.parsed.y.toFixed(decimals[context.datasetIndex]) + " " + units[context.datasetIndex];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        grid: {
+                            color: "rgba(51, 65, 85, 0.5)",
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: "#94a3b8",
+                            maxTicksLimit: 10,
+                            maxRotation: 0
+                        }
+                    },
+                    y: {
+                        type: "linear",
+                        display: true,
+                        position: "left",
+                        title: {
+                            display: true,
+                            text: "Voltage (V)",
+                            color: "#ecf74e"
+                        },
+                        grid: {
+                            color: "rgba(51, 65, 85, 0.5)",
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: "#ecf74e"
+                        }
+                    },
+                    y1: {
+                        type: "linear",
+                        display: true,
+                        position: "right",
+                        title: {
+                            display: true,
+                            text: "Current (A)",
+                            color: "#5eb02f"
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        ticks: {
+                            color: "#5eb02f"
+                        }
+                    },
+                    y2: {
+                        type: "linear",
+                        display: false,
+                        position: "right",
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    },
+                    y3: {
+                        type: "linear",
+                        display: true,
+                        position: "right",
+                        title: {
+                            display: true,
+                            text: "Energy (Wh)",
+                            color: "#a7e5f0"
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        ticks: {
+                            color: "#a7e5f0"
+                        }
+                    },
+                    y4: {
+                        type: "linear",
+                        display: false,
+                        position: "right",
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                },
+                animation: {
+                    duration: 0
+                }
+            }
+        });
+
+        // Legend toggle
+        document.querySelectorAll(".legend-item").forEach((item, index) => {
+            item.addEventListener("click", () => {
+                item.classList.toggle("hidden");
+                chart.data.datasets[index].hidden = !chart.data.datasets[index].hidden;
+                chart.update();
+            });
+        });
+
+        // Logging
+        function log(message, type = "info") {
+            const entry = document.createElement("div");
+            entry.className = "log-entry " + type;
+            const time = new Date().toLocaleTimeString("cs-CZ");
+            entry.textContent = `[${time}] ${message}`;
+            elements.logContent.appendChild(entry);
+            elements.logContent.scrollTop = elements.logContent.scrollHeight;
+        }
+
+        // Format runtime
+        function formatRuntime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+        }
+
+        // Helper functions for reading big-endian values
+        function get16bit(data, offset) {
+            return (data[offset] << 8) | data[offset + 1];
+        }
+
+        function get24bit(data, offset) {
+            return (data[offset] << 16) | (data[offset + 1] << 8) | data[offset + 2];
+        }
+
+        function get32bit(data, offset) {
+            return (data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3];
+        }
+
+        // Decode DC meter report (36 bytes)
+        function decodeDCReport(data) {
+            if (data.length !== 36) return null;
+            if (data[0] !== MESSAGE_HEADER_1 || data[1] !== MESSAGE_HEADER_2) return null;
+            if (data[2] !== MESSAGE_TYPE) return null;
+            if (data[3] !== MESSAGE_DEVICE_TYPE) return null;
+
+            const voltage = get24bit(data, 4) * 0.1;   // V
+            const current = get24bit(data, 7) * 0.001; // A
+            const power = voltage * current;           // W
+            const capacity = get24bit(data, 10) * 10;  // mAh
+            const temperature = get16bit(data, 24);    // °C
+            // Other fields does not work with tested model
+            // Not fully valid with https://github.com/syssi/esphome-atorch-dl24/blob/main/docs/protocol-design.md
+
+            return {
+                voltage,
+                current,
+                power,
+                capacity,
+                temperature
+            };
+        }
+
+        // Handle BLE notification
+        function handleNotification(event) {
+            const value = new Uint8Array(event.target.value.buffer);
+
+            // Debug: log raw data
+            const hexStr = Array.from(value).map(b => b.toString(16).padStart(2, "0")).join(" ");
+            console.log(`BLE RX (${value.length} bytes): ${hexStr}`);
+
+            // Check for start of new frame
+            if (value.length >= 2 && value[0] === MESSAGE_HEADER_1 && value[1] === MESSAGE_HEADER_2) {
+                data.frameBufferLen = 0;
+            }
+
+            // Append to buffer
+            if (data.frameBufferLen + value.length <= data.frameBuffer.length) {
+                data.frameBuffer.set(value, data.frameBufferLen);
+                data.frameBufferLen += value.length;
+            } else {
+                console.log("Buffer overflow, resetting");
+                data.frameBufferLen = 0;
+                return;
+            }
+
+            console.log(`Buffer now has ${data.frameBufferLen} bytes`);
+
+            // Check for complete frame
+            if (data.frameBufferLen >= 3) {
+                let expectedLen = 0;
+
+                if (data.frameBuffer[2] === MESSAGE_TYPE) {
+                    expectedLen = 36;
+                }
+
+                console.log(`Msg type: 0x${data.frameBuffer[2].toString(16)}, expected len: ${expectedLen}`);
+
+                if (expectedLen > 0 && data.frameBufferLen >= expectedLen) {
+                    const frameData = data.frameBuffer.slice(0, expectedLen);
+                    const decoded = decodeDCReport(frameData);
+
+                    console.log("Decoded:", decoded);
+
+                    if (decoded) {
+                        // Always update values when connected, regardless of isReceiving
+                        updateValues(decoded);
+
+                        // Only add to chart if receiving
+                        if (data.isReceiving) {
+                            addChartData(decoded);
+                        }
+                    }
+
+                    data.frameBufferLen = 0;
+                }
+            }
+        }
+
+        // Update UI values
+        function updateValues(values) {
+            if (values.voltage !== undefined) {
+                elements.values.voltage.textContent = values.voltage.toFixed(2);
+            }
+            if (values.current !== undefined) {
+                elements.values.current.textContent = values.current.toFixed(3);
+            }
+            if (values.power !== undefined) {
+                elements.values.power.textContent = values.power.toFixed(2);
+            }
+            if (values.capacity !== undefined) {
+                elements.values.capacity.textContent = Math.round(values.capacity);
+            }
+            if (values.temperature !== undefined) {
+                elements.values.temperature.textContent = values.temperature.toFixed(0);
+            }
+        }
+
+        // Start local timer
+        function startRuntime() {
+            data.runtimeStartTime = Date.now();
+            data.runtimeInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - data.runtimeStartTime) / 1000) + data.runtimeElapsed;
+                elements.values.runtime.textContent = formatRuntime(elapsed);
+            }, 1000);
+        }
+
+        // Stop local timer
+        function stopRuntime() {
+            if (data.runtimeInterval) {
+                clearInterval(data.runtimeInterval);
+                data.runtimeInterval = null;
+            }
+            if (data.runtimeStartTime !== null) {
+                data.runtimeElapsed += Math.floor((Date.now() - data.runtimeStartTime) / 1000);
+                data.runtimeStartTime = null;
+            }
+        }
+
+        // Add data to storage and update chart
+        function addChartData(values) {
+            const now = new Date().toLocaleTimeString("cs-CZ");
+
+            // Energy (Wh) calculation every second (1 Hz measurement)
+            data.accumulatedWh += values.power / 3600;
+            elements.values.energy.textContent = data.accumulatedWh.toFixed(2);
+
+            // Saving all data to DB
+            data.points.timestamps.push(now);
+            data.points.voltage.push(values.voltage);
+            data.points.current.push(values.current);
+            data.points.power.push(values.power);
+            data.points.capacity.push(values.capacity);
+            data.points.energy.push(data.accumulatedWh);
+            data.points.temperature.push(values.temperature);
+
+            // Chart shows only slice of DB (maxChartDataPoints)
+            const startIdx = Math.max(0, data.points.timestamps.length - data.maxChartDataPoints);
+            chart.data.labels = data.points.timestamps.slice(startIdx);
+            chart.data.datasets[0].data = data.points.voltage.slice(startIdx);
+            chart.data.datasets[1].data = data.points.current.slice(startIdx);
+            chart.data.datasets[2].data = data.points.power.slice(startIdx);
+            chart.data.datasets[3].data = data.points.capacity.slice(startIdx);
+            chart.data.datasets[4].data = data.points.energy.slice(startIdx);
+            chart.update("none");
+
+            elements.sampleCount.textContent = data.points.timestamps.length;
+        }
+
+        // Connect to DL24 via Bluetooth
+        async function connect() {
+            try {
+                elements.statusDot.classList.add("connecting");
+                elements.statusText.textContent = "Searching...";
+                log("Searching for DL24 device...", "info");
+
+                // Request device with the specific service
+                data.device = await navigator.bluetooth.requestDevice({
+                    filters: [
+                        { services: [SERVICE_UUID] }
+                    ],
+                    optionalServices: [SERVICE_UUID]
+                });
+
+                log(`Found: ${data.device.name || "Unknown device"}`, "success");
+
+                // Listen for disconnection
+                data.device.addEventListener("gattserverdisconnected", onDisconnected);
+
+                elements.statusText.textContent = "Connecting...";
+                log("Connecting to GATT server...", "info");
+
+                // Connect to GATT server
+                data.server = await data.device.gatt.connect();
+
+                // Get the service
+                const service = await data.server.getPrimaryService(SERVICE_UUID);
+
+                // Get notify characteristic
+                data.notifyCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+                // Start notifications
+                await data.notifyCharacteristic.startNotifications();
+                data.notifyCharacteristic.addEventListener("characteristicvaluechanged", handleNotification);
+
+                // Update UI
+                data.isConnected = true;
+                elements.statusDot.classList.remove("connecting");
+                elements.statusDot.classList.add("connected");
+                elements.statusText.textContent = "Connected";
+                elements.btnConnect.innerHTML = "<span class=\"bt-icon\">&#x1F517;</span> Disconnect";
+                elements.btnStart.disabled = false;
+
+                log("Connected to DL24, notifications active", "success");
+
+            } catch (error) {
+                elements.statusDot.classList.remove("connecting");
+                elements.statusText.textContent = "Disconnected";
+                log(`Connection error: ${error.message}`, "error");
+            }
+        }
+
+        // Handle disconnection
+        function onDisconnected() {
+            data.isConnected = false;
+            data.isReceiving = false;
+            data.notifyCharacteristic = null;
+            stopRuntime();
+
+            elements.statusDot.classList.remove("connected", "connecting");
+            elements.statusText.textContent = "Disconnected";
+            elements.btnConnect.innerHTML = "<span class=\"bt-icon\">&#x1F517;</span> Connect Bluetooth";
+            elements.btnStart.disabled = true;
+            elements.btnStop.disabled = true;
+
+            log("Bluetooth device disconnected", "info");
+        }
+
+        // Disconnect from device
+        async function disconnect() {
+            if (data.device && data.device.gatt.connected) {
+                data.device.gatt.disconnect();
+            }
+        }
+
+        // Clear chart data
+        function clearData() {
+            data.points.timestamps = [];
+            data.points.voltage = [];
+            data.points.current = [];
+            data.points.power = [];
+            data.points.capacity = [];
+            data.points.energy = [];
+            data.points.temperature = [];
+
+            // Reset akumulované energie
+            data.accumulatedWh = 0;
+            elements.values.energy.textContent = "0.00";
+
+            // Reset lokální časomíry
+            stopRuntime();
+            data.runtimeElapsed = 0;
+            elements.values.runtime.textContent = "00:00:00";
+
+            chart.data.labels = [];
+            chart.data.datasets.forEach(ds => ds.data = []);
+            chart.update();
+
+            elements.sampleCount.textContent = "0";
+
+            // Reset display values
+            Object.values(elements.values).forEach(el => {
+                if (el.id === "runtime") {
+                    el.textContent = "00:00:00";
+                } else {
+                    el.textContent = "--";
+                }
+            });
+
+            log("Data cleared", "info");
+        }
+
+        // Save to CSV
+        function saveCSV() {
+            if (data.points.timestamps.length === 0) {
+                log("No data to save", "error");
+                return;
+            }
+
+            let csv = "Time,Voltage (V),Current (A),Power (W),Charge (mAh),Energy (Wh),Temperature (C)\n";
+
+            for (let i = 0; i < data.points.timestamps.length; i++) {
+                csv += `${data.points.timestamps[i]},${data.points.voltage[i]},${data.points.current[i]},${data.points.power[i]},${data.points.capacity[i]},${data.points.energy[i].toFixed(4)},${data.points.temperature[i]}\n`;
+            }
+
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `DL24_BT_${new Date().toISOString().slice(0, 19).replace(/[:.]/g, "-")}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+
+            log(`Saved ${data.points.timestamps.length} samples to CSV`, "success");
+        }
+
+        // Event listeners
+        elements.btnConnect.addEventListener("click", () => {
+            if (data.isConnected) {
+                disconnect();
+            } else {
+                connect();
+            }
+        });
+
+        elements.btnStart.addEventListener("click", () => {
+            data.isReceiving = true;
+            startRuntime();
+            elements.btnStart.disabled = true;
+            elements.btnStop.disabled = false;
+            log("Recording started", "success");
+        });
+
+        elements.btnStop.addEventListener("click", () => {
+            data.isReceiving = false;
+            stopRuntime();
+            elements.btnStart.disabled = false;
+            elements.btnStop.disabled = true;
+            log("Recording stopped", "info");
+        });
+
+        elements.btnClear.addEventListener("click", clearData);
+
+        elements.btnSave.addEventListener("click", saveCSV);
+
+        elements.btnLogClear.addEventListener("click", () => {
+            elements.logContent.innerHTML = "";
+        });
+
+        // Initial log
+        log("Dashboard ready. Click \"Connect Bluetooth\"", "info");
+    </script>
+</body>
+</html>
