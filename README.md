@@ -2,6 +2,8 @@
 
 A simple web-based dashboard for monitoring Atorch DL24P electronic load via Web Bluetooth API.
 
+[![Dashboard Screenshot](./image_small.png)](./image.png)
+
 ## Features
 
 - Real-time display of voltage, current, power, charge (mAh), energy (Wh), and temperature
