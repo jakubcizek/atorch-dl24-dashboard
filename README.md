@@ -58,7 +58,3 @@ This dashboard uses the Web Bluetooth API, which is supported in:
 This project was largely developed with the assistance of **Claude (Opus 4.5)** AI chatbot.
 
 For easy extension via vibe coding with LLMs, see [`Claude.md`](./Claude.md) - a technical specification describing the internal architecture, data structures, and extension points.
-
-## License
-
-MIT
