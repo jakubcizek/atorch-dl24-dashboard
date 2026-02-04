@@ -43,7 +43,7 @@ This dashboard uses the Web Bluetooth API, which is supported in:
 
 ## Usage
 
-1. Open `web/dl24.html` in a compatible browser
+1. Open `dl24.html` in a compatible browser
 2. Click "Connect Bluetooth" and select your DL24P device
 3. The dashboard will display live measurements
 4. Click "START" to begin recording data
@@ -51,7 +51,12 @@ This dashboard uses the Web Bluetooth API, which is supported in:
 6. Click "SAVE" to export recorded data as CSV
 7. Click "CLEAR" to reset all recorded data
 
+## Development
+
+This project was largely developed with the assistance of **Claude (Opus 4.5)** AI chatbot.
+
+For easy extension via vibe coding with LLMs, see [`Claude.md`](./Claude.md) - a technical specification describing the internal architecture, data structures, and extension points.
+
 ## License
 
 MIT
-
