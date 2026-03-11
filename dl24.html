@@ -355,7 +355,7 @@
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
         }
 
-        .btn:disabled {
+.btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none !important;
@@ -1098,6 +1098,56 @@
             elements.sampleCount.textContent = data.points.timestamps.length;
         }
 
+        // Send command to DL24 via BLE
+        async function sendCommand(bytes, description) {
+            if (!data.notifyCharacteristic) {
+                log("Not connected", "error");
+                return;
+            }
+            try {
+                const cmd = new Uint8Array(bytes);
+                const hexStr = Array.from(cmd).map(b => b.toString(16).padStart(2, "0")).join(" ");
+                console.log(`BLE TX (${cmd.length} bytes): ${hexStr}`);
+                try {
+                    await data.notifyCharacteristic.writeValueWithoutResponse(cmd);
+                } catch (e) {
+                    console.log("writeValueWithoutResponse failed, trying writeValue:", e.message);
+                    await data.notifyCharacteristic.writeValue(cmd);
+                }
+                log(description, "success");
+            } catch (error) {
+                log(`Command error: ${error.message}`, "error");
+            }
+        }
+
+        // Atorch protocol checksum: (sum of bytes[2..8]) XOR 0x44
+        function atorchChecksum(frame) {
+            let sum = 0;
+            for (let i = 2; i < frame.length - 1; i++) {
+                sum += frame[i];
+            }
+            return (sum ^ 0x44) & 0xFF;
+        }
+
+        // Build Atorch command frame (10 bytes)
+        function buildAtorchCommand(cmd, val0 = 0, val1 = 0, val2 = 0, val3 = 0) {
+            const frame = [0xFF, 0x55, 0x11, MESSAGE_DEVICE_TYPE, cmd, val0, val1, val2, val3, 0x00];
+            frame[9] = atorchChecksum(frame);
+            return frame;
+        }
+
+        async function loadOn() {
+            // Atorch "OK/Enter" button = toggle load on/off (0x32)
+            const frame = buildAtorchCommand(0x32);
+            await sendCommand(frame, "Load toggle (ON) command sent");
+        }
+
+        async function loadOff() {
+            // Same toggle command - DL24P uses toggle, not explicit on/off
+            const frame = buildAtorchCommand(0x32);
+            await sendCommand(frame, "Load toggle (OFF) command sent");
+        }
+
         // Connect to DL24 via Bluetooth
         async function connect() {
             try {
@@ -1244,20 +1294,22 @@
             }
         });
 
-        elements.btnStart.addEventListener("click", () => {
+        elements.btnStart.addEventListener("click", async () => {
+            await loadOn();
             data.isReceiving = true;
             startRuntime();
             elements.btnStart.disabled = true;
             elements.btnStop.disabled = false;
-            log("Recording started", "success");
+            log("Load ON + recording started", "success");
         });
 
-        elements.btnStop.addEventListener("click", () => {
+        elements.btnStop.addEventListener("click", async () => {
+            await loadOff();
             data.isReceiving = false;
             stopRuntime();
             elements.btnStart.disabled = false;
             elements.btnStop.disabled = true;
-            log("Recording stopped", "info");
+            log("Load OFF + recording stopped", "info");
         });
 
         elements.btnClear.addEventListener("click", clearData);
