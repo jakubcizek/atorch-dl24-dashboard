@@ -4,7 +4,7 @@ This document describes the internal architecture of `dl24.html` for developers 
 
 ## Overview
 
-Single-file HTML application that connects to Atorch DL24P electronic load via Web Bluetooth API and displays real-time measurements.
+Single-file HTML application that connects to Atorch DL24P electronic load via Web Bluetooth API, displays real-time measurements, and actively controls the load (ON/OFF).
 
 ## File Structure
 
@@ -117,6 +117,11 @@ Legend items are clickable to toggle series visibility.
 - `addChartData(values)` - Adds point to chart and data arrays
 - `log(message, type)` - Adds entry to system log
 
+### Load Control
+- `sendCommand(bytes, description)` - Sends raw bytes to BLE characteristic
+- `buildAtorchCommand(cmd, ...)` - Builds 10-byte Atorch command with checksum
+- `loadOn()` / `loadOff()` - Toggle load via Atorch OK button command (0x32)
+
 ### Recording
 - `startRuntime()` - Starts local timer
 - `stopRuntime()` - Pauses timer, preserves elapsed time
@@ -135,13 +140,29 @@ Legend items are clickable to toggle series visibility.
 7. Optionally add dataset to chart configuration
 8. Update CSV export in `saveCSV()`
 
-### Adding Device Control (future)
-The BLE characteristic supports writing. To send commands:
-```javascript
-const command = new Uint8Array([0xFF, 0x55, /* command bytes */]);
-await data.notifyCharacteristic.writeValue(command);
+### Device Control (Atorch Protocol)
+The BLE characteristic (FFE1) supports both reading notifications and writing commands. Load ON/OFF uses the Atorch command protocol:
+
 ```
-Command format is documented in the protocol reference but not tested with DL24P.
+Format: [0xFF 0x55 0x11] [device_type] [cmd] [val0..val3] [checksum]
+Total: 10 bytes
+Checksum: (sum of bytes[2..8]) XOR 0x44
+```
+
+Implemented commands:
+- `0x32` (OK/Enter button) - Toggles load ON/OFF. Used by START/STOP buttons.
+
+Helper functions:
+- `buildAtorchCommand(cmd, val0, val1, val2, val3)` - Builds 10-byte command frame with checksum
+- `sendCommand(bytes, description)` - Sends command via BLE (tries `writeValueWithoutResponse` first, falls back to `writeValue`)
+- `loadOn()` / `loadOff()` - Send toggle command (both use `0x32`)
+
+**Note:** The protocol only supports toggle, not explicit on/off states. START assumes load is off, STOP assumes it is on.
+
+Other potentially usable Atorch commands (untested on DL24P):
+- `0x01` - Reset Wh, `0x02` - Reset Ah, `0x03` - Reset duration, `0x05` - Reset all
+- `0x11`/`0x12` - Plus/Minus button simulation
+- `0x31` - Settings/Menu, `0x21` - Set backlight (0-60s)
 
 ### Adding New Chart Series
 1. Add dataset object to `chart.data.datasets[]`
