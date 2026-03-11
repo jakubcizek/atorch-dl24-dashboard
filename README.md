@@ -8,7 +8,8 @@ A simple web-based dashboard for monitoring Atorch DL24P electronic load via Web
 
 - Real-time display of voltage, current, power, charge (mAh), energy (Wh), and temperature
 - Live chart with multiple data series (voltage, current, power, charge, energy)
-- Data recording with start/stop control
+- Active load control (ON/OFF) via Atorch protocol
+- Data recording with start/stop control (START also turns load ON, STOP turns it OFF)
 - Export recorded data to CSV
 - Dark theme UI optimized for lab use
 
@@ -23,8 +24,8 @@ Other Atorch devices may or may not work.
 
 ## Limitations
 
-- **Passive monitoring only** - The dashboard can only read measurement data from the DL24P. It cannot actively control or configure the load (set current, voltage limits, etc.)
 - **Partial protocol support** - The DL24P implements only a subset of the Atorch communication protocol. Some fields documented in the protocol specification do not work as expected with this device.
+- **Toggle-based control** - Load ON/OFF uses a toggle command (Atorch `0x32` = OK button simulation), not explicit on/off states. The dashboard assumes the load is off when you click START and on when you click STOP.
 
 ## Protocol Reference
 
@@ -48,13 +49,13 @@ This dashboard uses the Web Bluetooth API, which is supported in:
 1. Open `dl24.html` in a compatible browser
 2. Click "Connect Bluetooth" and select your DL24P device
 3. The dashboard will display live measurements
-4. Click "START" to begin recording data
-5. Click "STOP" to pause recording
+4. Click "START" to turn the load ON and begin recording data
+5. Click "STOP" to turn the load OFF and stop recording
 6. Click "SAVE" to export recorded data as CSV
 7. Click "CLEAR" to reset all recorded data
 
 ## Development
 
-This project was largely developed with the assistance of **Claude (Opus 4.5)** AI chatbot.
+This project was largely developed with the assistance of **Claude Code (Opus 4.6)** AI chatbot.
 
 For easy extension via vibe coding with LLMs, see [`Claude.md`](./Claude.md) - a technical specification describing the internal architecture, data structures, and extension points.
