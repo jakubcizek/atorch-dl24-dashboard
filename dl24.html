@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atorch DL24P</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <style>
         :root {
             --bg-primary: #0f172a;
@@ -355,7 +356,187 @@
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
         }
 
-.btn:disabled {
+        .btn-json {
+            background: var(--accent-cyan);
+            color: #000;
+        }
+
+        .btn-json:hover {
+            background: #0891b2;
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
+        }
+
+        /* Load State Indicator */
+        .load-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .load-indicator.on {
+            color: var(--accent-green);
+        }
+
+        .load-indicator.off {
+            color: var(--text-secondary);
+        }
+
+        /* Current/Cutoff Controls */
+        .param-controls {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 0.75rem;
+        }
+
+        .param-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+        }
+
+        .param-group label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .param-group input {
+            width: 70px;
+            padding: 0.4rem 0.5rem;
+            border: 1px solid var(--bg-card);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .param-group input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .btn-small {
+            padding: 0.4rem 0.75rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-small:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-plus {
+            background: var(--accent-green);
+            color: #000;
+        }
+
+        .btn-minus {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .btn-set {
+            background: var(--accent-yellow);
+            color: #000;
+        }
+
+        .param-group select {
+            padding: 0.4rem 0.5rem;
+            border: 1px solid var(--bg-card);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+            cursor: pointer;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            inset: 0;
+            background: var(--bg-card);
+            border-radius: 22px;
+            transition: background 0.3s;
+        }
+
+        .toggle-slider::before {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            left: 3px;
+            bottom: 3px;
+            background: var(--text-primary);
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--accent-green);
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(18px);
+        }
+
+        /* Stats Section */
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-item .stat-label {
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+
+        .stat-item .stat-value {
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none !important;
@@ -520,6 +701,9 @@
                 <span class="status-dot" id="statusDot"></span>
                 <span id="statusText">Disconnected</span>
             </div>
+            <div class="load-indicator off" id="loadIndicator">
+                LOAD: <span id="loadStateText">OFF</span>
+            </div>
             <button class="btn-connect" id="btnConnect">
                 <span class="bt-icon">&#x1F517;</span>
                 Connect DLP24P via Bluetooth
@@ -636,6 +820,27 @@
             <div class="samples-info">
                 Records number: <span id="sampleCount">0</span>
             </div>
+            <div class="stats-section" id="statsSection">
+                <div class="stat-item">
+                    <div class="stat-label">Voltage</div>
+                    <div class="stat-value" id="statVoltage">-- / -- / --</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Current</div>
+                    <div class="stat-value" id="statCurrent">-- / -- / --</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Power</div>
+                    <div class="stat-value" id="statPower">-- / -- / --</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Temperature</div>
+                    <div class="stat-value" id="statTemp">-- / -- / --</div>
+                </div>
+                <div class="stat-item" style="grid-column: 1 / -1; font-size: 0.7rem; opacity: 0.6;">
+                    min / avg / max
+                </div>
+            </div>
         </div>
 
         <div class="controls">
@@ -649,8 +854,38 @@
                 <span>🗑</span> CLEAR
             </button>
             <button class="btn btn-save" id="btnSave">
-                <span>💾</span> SAVE
+                <span>💾</span> CSV
             </button>
+            <button class="btn btn-json" id="btnJson">
+                <span>{ }</span> JSON
+            </button>
+        </div>
+
+        <div class="param-controls">
+            <div class="param-group">
+                <label>Value:</label>
+                <button class="btn-small btn-minus" id="btnValueMinus" disabled>−</button>
+                <button class="btn-small btn-set" id="btnValueSet" disabled>SET</button>
+                <button class="btn-small btn-plus" id="btnValuePlus" disabled>+</button>
+            </div>
+            <div class="param-group">
+                <label>Cutoff V:</label>
+                <input type="number" id="inputCutoff" step="0.1" min="0" max="200" value="0" placeholder="0 = off">
+            </div>
+            <div class="param-group">
+                <label>CSV sep:</label>
+                <select id="csvSeparator">
+                    <option value=",">, (comma)</option>
+                    <option value=";">; (semicolon)</option>
+                </select>
+            </div>
+            <div class="param-group">
+                <label for="chkAutoStop">Auto-stop on 0A:</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="chkAutoStop" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
         </div>
 
         <div class="log-section">
@@ -697,7 +932,11 @@
                 temperature: []
             },
             accumulatedWh: 0,
-            maxChartDataPoints: 600
+            maxChartDataPoints: 600,
+            loadDetected: false,
+            commandBusy: false,
+            reconnectAttempts: 0,
+            maxReconnectAttempts: 3
         };
 
         // DOM Elements
@@ -707,12 +946,27 @@
             btnStop: document.getElementById("btnStop"),
             btnClear: document.getElementById("btnClear"),
             btnSave: document.getElementById("btnSave"),
+            btnJson: document.getElementById("btnJson"),
+            btnValuePlus: document.getElementById("btnValuePlus"),
+            btnValueMinus: document.getElementById("btnValueMinus"),
+            btnValueSet: document.getElementById("btnValueSet"),
             btnLogClear: document.getElementById("btnLogClear"),
+            inputCutoff: document.getElementById("inputCutoff"),
+            chkAutoStop: document.getElementById("chkAutoStop"),
+            csvSeparator: document.getElementById("csvSeparator"),
+            loadIndicator: document.getElementById("loadIndicator"),
+            loadStateText: document.getElementById("loadStateText"),
             statusDot: document.getElementById("statusDot"),
             statusText: document.getElementById("statusText"),
             logContent: document.getElementById("logContent"),
             sampleCount: document.getElementById("sampleCount"),
             apiWarning: document.getElementById("apiWarning"),
+            stats: {
+                voltage: document.getElementById("statVoltage"),
+                current: document.getElementById("statCurrent"),
+                power: document.getElementById("statPower"),
+                temperature: document.getElementById("statTemp")
+            },
             values: {
                 voltage: document.getElementById("voltage"),
                 current: document.getElementById("current"),
@@ -820,6 +1074,17 @@
                                 return context.dataset.label.split(" ")[0] + ": " +
                                        context.parsed.y.toFixed(decimals[context.datasetIndex]) + " " + units[context.datasetIndex];
                             }
+                        }
+                    },
+                    zoom: {
+                        pan: {
+                            enabled: true,
+                            mode: "x"
+                        },
+                        zoom: {
+                            wheel: { enabled: true },
+                            pinch: { enabled: true },
+                            mode: "x"
                         }
                     }
                 },
@@ -1028,6 +1293,55 @@
             }
         }
 
+        // Detect load state from current
+        const LOAD_CURRENT_THRESHOLD = 0.005; // A
+
+        function updateLoadIndicator(current) {
+            const isOn = current > LOAD_CURRENT_THRESHOLD;
+            if (isOn !== data.loadDetected) {
+                const wasOn = data.loadDetected;
+                data.loadDetected = isOn;
+                elements.loadIndicator.className = "load-indicator " + (isOn ? "on" : "off");
+                elements.loadStateText.textContent = isOn ? "ON" : "OFF";
+
+                // Auto-stop recording when current drops to 0 (load turned off physically)
+                if (wasOn && !isOn && data.isReceiving && elements.chkAutoStop.checked) {
+                    data.isReceiving = false;
+                    stopRuntime();
+                    elements.btnStart.disabled = false;
+                    elements.btnStop.disabled = true;
+                    log("Auto-stopped recording (current dropped to 0A)", "info");
+                }
+            }
+        }
+
+        // Check cutoff voltage
+        function checkCutoff(voltage) {
+            const cutoff = parseFloat(elements.inputCutoff.value);
+            if (cutoff > 0 && voltage > 0 && voltage < cutoff && data.isReceiving) {
+                log(`Cutoff voltage ${cutoff}V reached (${voltage.toFixed(2)}V) - stopping load`, "error");
+                elements.btnStop.click();
+            }
+        }
+
+        // Calculate and display statistics
+        function updateStats() {
+            const p = data.points;
+            if (p.timestamps.length === 0) return;
+
+            function stat(arr, decimals) {
+                const min = Math.min(...arr);
+                const max = Math.max(...arr);
+                const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
+                return `${min.toFixed(decimals)} / ${avg.toFixed(decimals)} / ${max.toFixed(decimals)}`;
+            }
+
+            elements.stats.voltage.textContent = stat(p.voltage, 2);
+            elements.stats.current.textContent = stat(p.current, 3);
+            elements.stats.power.textContent = stat(p.power, 2);
+            elements.stats.temperature.textContent = stat(p.temperature, 0);
+        }
+
         // Update UI values
         function updateValues(values) {
             if (values.voltage !== undefined) {
@@ -1035,6 +1349,7 @@
             }
             if (values.current !== undefined) {
                 elements.values.current.textContent = values.current.toFixed(3);
+                updateLoadIndicator(values.current);
             }
             if (values.power !== undefined) {
                 elements.values.power.textContent = values.power.toFixed(2);
@@ -1044,6 +1359,11 @@
             }
             if (values.temperature !== undefined) {
                 elements.values.temperature.textContent = values.temperature.toFixed(0);
+            }
+
+            // Check cutoff
+            if (values.voltage !== undefined) {
+                checkCutoff(values.voltage);
             }
         }
 
@@ -1096,14 +1416,24 @@
             chart.update("none");
 
             elements.sampleCount.textContent = data.points.timestamps.length;
+
+            // Update statistics every 5 samples
+            if (data.points.timestamps.length % 5 === 0) {
+                updateStats();
+            }
         }
 
-        // Send command to DL24 via BLE
+        // Send command to DL24 via BLE (with debounce)
         async function sendCommand(bytes, description) {
             if (!data.notifyCharacteristic) {
                 log("Not connected", "error");
                 return;
             }
+            if (data.commandBusy) {
+                log("Command busy, please wait...", "info");
+                return;
+            }
+            data.commandBusy = true;
             try {
                 const cmd = new Uint8Array(bytes);
                 const hexStr = Array.from(cmd).map(b => b.toString(16).padStart(2, "0")).join(" ");
@@ -1117,6 +1447,8 @@
                 log(description, "success");
             } catch (error) {
                 log(`Command error: ${error.message}`, "error");
+            } finally {
+                setTimeout(() => { data.commandBusy = false; }, 300);
             }
         }
 
@@ -1146,6 +1478,55 @@
             // Same toggle command - DL24P uses toggle, not explicit on/off
             const frame = buildAtorchCommand(0x32);
             await sendCommand(frame, "Load toggle (OFF) command sent");
+        }
+
+        async function valuePlus() {
+            const frame = buildAtorchCommand(0x33);
+            await sendCommand(frame, "Value + sent");
+        }
+
+        async function valueMinus() {
+            const frame = buildAtorchCommand(0x34);
+            await sendCommand(frame, "Value − sent");
+        }
+
+        async function valueSet() {
+            // 0x31 = SET button — cycles through editable parameters on the device
+            const frame = buildAtorchCommand(0x31);
+            await sendCommand(frame, "SET (cursor) sent");
+        }
+
+        // JSON export
+        function saveJSON() {
+            if (data.points.timestamps.length === 0) {
+                log("No data to save", "error");
+                return;
+            }
+
+            const exportData = {
+                device: "Atorch DL24P",
+                exportDate: new Date().toISOString(),
+                samples: data.points.timestamps.length,
+                data: data.points.timestamps.map((t, i) => ({
+                    time: t,
+                    voltage: data.points.voltage[i],
+                    current: data.points.current[i],
+                    power: data.points.power[i],
+                    capacity: data.points.capacity[i],
+                    energy: parseFloat(data.points.energy[i].toFixed(4)),
+                    temperature: data.points.temperature[i]
+                }))
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `DL24_BT_${new Date().toISOString().slice(0, 19).replace(/[:.]/g, "-")}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+
+            log(`Saved ${data.points.timestamps.length} samples to JSON`, "success");
         }
 
         // Connect to DL24 via Bluetooth
@@ -1191,6 +1572,10 @@
                 elements.statusText.textContent = "Connected";
                 elements.btnConnect.innerHTML = "<span class=\"bt-icon\">&#x1F517;</span> Disconnect";
                 elements.btnStart.disabled = false;
+                elements.btnValuePlus.disabled = false;
+                elements.btnValueMinus.disabled = false;
+                elements.btnValueSet.disabled = false;
+                data.reconnectAttempts = 0;
 
                 log("Connected to DL24, notifications active", "success");
 
@@ -1201,8 +1586,9 @@
             }
         }
 
-        // Handle disconnection
+        // Handle disconnection with auto-reconnect
         function onDisconnected() {
+            const wasReceiving = data.isReceiving;
             data.isConnected = false;
             data.isReceiving = false;
             data.notifyCharacteristic = null;
@@ -1213,8 +1599,48 @@
             elements.btnConnect.innerHTML = "<span class=\"bt-icon\">&#x1F517;</span> Connect Bluetooth";
             elements.btnStart.disabled = true;
             elements.btnStop.disabled = true;
+            elements.btnValuePlus.disabled = true;
+            elements.btnValueMinus.disabled = true;
+            elements.btnValueSet.disabled = true;
+            elements.loadIndicator.className = "load-indicator off";
+            elements.loadStateText.textContent = "OFF";
 
             log("Bluetooth device disconnected", "info");
+
+            // Auto-reconnect
+            if (data.device && data.reconnectAttempts < data.maxReconnectAttempts) {
+                data.reconnectAttempts++;
+                log(`Auto-reconnect attempt ${data.reconnectAttempts}/${data.maxReconnectAttempts}...`, "info");
+                elements.statusDot.classList.add("connecting");
+                elements.statusText.textContent = "Reconnecting...";
+
+                setTimeout(async () => {
+                    try {
+                        data.server = await data.device.gatt.connect();
+                        const service = await data.server.getPrimaryService(SERVICE_UUID);
+                        data.notifyCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+                        await data.notifyCharacteristic.startNotifications();
+                        data.notifyCharacteristic.addEventListener("characteristicvaluechanged", handleNotification);
+
+                        data.isConnected = true;
+                        elements.statusDot.classList.remove("connecting");
+                        elements.statusDot.classList.add("connected");
+                        elements.statusText.textContent = "Connected";
+                        elements.btnConnect.innerHTML = "<span class=\"bt-icon\">&#x1F517;</span> Disconnect";
+                        elements.btnStart.disabled = false;
+                        elements.btnValuePlus.disabled = false;
+                        elements.btnValueMinus.disabled = false;
+                        elements.btnValueSet.disabled = false;
+                        data.reconnectAttempts = 0;
+
+                        log("Reconnected successfully", "success");
+                    } catch (error) {
+                        elements.statusDot.classList.remove("connecting");
+                        log(`Reconnect failed: ${error.message}`, "error");
+                        onDisconnected();
+                    }
+                }, 2000);
+            }
         }
 
         // Disconnect from device
@@ -1258,6 +1684,12 @@
                 }
             });
 
+            // Reset stats
+            elements.stats.voltage.textContent = "-- / -- / --";
+            elements.stats.current.textContent = "-- / -- / --";
+            elements.stats.power.textContent = "-- / -- / --";
+            elements.stats.temperature.textContent = "-- / -- / --";
+
             log("Data cleared", "info");
         }
 
@@ -1268,10 +1700,20 @@
                 return;
             }
 
-            let csv = "Time,Voltage (V),Current (A),Power (W),Charge (mAh),Energy (Wh),Temperature (C)\n";
+            const sep = elements.csvSeparator.value;
+            let csv = ["Time", "Voltage (V)", "Current (A)", "Power (W)", "Charge (mAh)", "Energy (Wh)", "Temperature (C)"].join(sep) + "\n";
 
             for (let i = 0; i < data.points.timestamps.length; i++) {
-                csv += `${data.points.timestamps[i]},${data.points.voltage[i]},${data.points.current[i]},${data.points.power[i]},${data.points.capacity[i]},${data.points.energy[i].toFixed(4)},${data.points.temperature[i]}\n`;
+                const row = [
+                    data.points.timestamps[i],
+                    data.points.voltage[i],
+                    data.points.current[i],
+                    data.points.power[i],
+                    data.points.capacity[i],
+                    data.points.energy[i].toFixed(4),
+                    data.points.temperature[i]
+                ];
+                csv += row.join(sep) + "\n";
             }
 
             const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -1315,6 +1757,12 @@
         elements.btnClear.addEventListener("click", clearData);
 
         elements.btnSave.addEventListener("click", saveCSV);
+
+        elements.btnJson.addEventListener("click", saveJSON);
+
+        elements.btnValuePlus.addEventListener("click", valuePlus);
+        elements.btnValueMinus.addEventListener("click", valueMinus);
+        elements.btnValueSet.addEventListener("click", valueSet);
 
         elements.btnLogClear.addEventListener("click", () => {
             elements.logContent.innerHTML = "";
